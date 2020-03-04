@@ -124,7 +124,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
   );
   scene.add(mesh);
 
-  this.addVariable = function(
+  this.addVariable = function (
     variableName,
     computeFragmentShader,
     initialValueTexture
@@ -148,11 +148,11 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     return variable;
   };
 
-  this.setVariableDependencies = function(variable, dependencies) {
+  this.setVariableDependencies = function (variable, dependencies) {
     variable.dependencies = dependencies;
   };
 
-  this.init = function() {
+  this.init = function () {
     if (!renderer.extensions.get('OES_texture_float')) {
       return 'No OES_texture_float support for float textures.';
     }
@@ -232,7 +232,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     return null;
   };
 
-  this.compute = function() {
+  this.compute = function () {
     var currentTextureIndex = this.currentTextureIndex;
     var nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
 
@@ -260,11 +260,11 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     this.currentTextureIndex = nextTextureIndex;
   };
 
-  this.getCurrentRenderTarget = function(variable) {
+  this.getCurrentRenderTarget = function (variable) {
     return variable.renderTargets[this.currentTextureIndex];
   };
 
-  this.getAlternateRenderTarget = function(variable) {
+  this.getAlternateRenderTarget = function (variable) {
     return variable.renderTargets[this.currentTextureIndex === 0 ? 1 : 0];
   };
 
@@ -291,7 +291,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
   }
   this.createShaderMaterial = createShaderMaterial;
 
-  this.createRenderTarget = function(
+  this.createRenderTarget = function (
     sizeXTexture,
     sizeYTexture,
     wrapS,
@@ -324,7 +324,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     return renderTarget;
   };
 
-  this.createTexture = function() {
+  this.createTexture = function () {
     var a = new Float32Array(sizeX * sizeY * 4);
     var texture = new THREE.DataTexture(
       a,
@@ -338,7 +338,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     return texture;
   };
 
-  this.renderTexture = function(input, output) {
+  this.renderTexture = function (input, output) {
     // Takes a texture, and render out in rendertarget
     // input = Texture
     // output = RenderTarget
@@ -350,10 +350,11 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     passThruUniforms.texture.value = null;
   };
 
-  this.doRenderTarget = function(material, output) {
+  this.doRenderTarget = function (material, output) {
     mesh.material = material;
     renderer.setRenderTarget(output);
     renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
     mesh.material = passThruShader;
   };
 
