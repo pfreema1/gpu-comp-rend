@@ -1,5 +1,3 @@
-// precision lowp float;
-// precision lowp int;
 
 varying vec2 vUv;
             

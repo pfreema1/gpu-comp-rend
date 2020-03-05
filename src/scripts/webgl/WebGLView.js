@@ -164,10 +164,11 @@ export default class WebGLView {
       new THREE.PlaneBufferGeometry(1, 1, 32, 32),
       new THREE.ShaderMaterial({
         uniforms: {
-          computedTexture: { value: null },
-          fragmentShader: glslify(testFrag),
-          vertexShader: glslify(genericVert)
-        }
+          texturePosition: { value: null },
+          textureVelocity: { value: null }
+        },
+        fragmentShader: glslify(testFrag),
+        vertexShader: glslify(genericVert)
       })
       // new THREE.MeshNormalMaterial()
     );
@@ -197,8 +198,11 @@ export default class WebGLView {
 
     this.gpuCompute.compute();
 
-    this.plane.material.uniforms.computedTexture.value = this.gpuCompute.getCurrentRenderTarget(
+    this.plane.material.uniforms.texturePosition.value = this.gpuCompute.getCurrentRenderTarget(
       this.posVar
+    ).texture;
+    this.plane.material.uniforms.textureVelocity.value = this.gpuCompute.getCurrentRenderTarget(
+      this.velVar
     ).texture;
   }
 
