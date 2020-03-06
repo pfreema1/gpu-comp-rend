@@ -8,7 +8,8 @@ import fragmentShaderVel from '../../shaders/fragmentShaderVel.frag';
 import fragmentShaderPos from '../../shaders/fragmentShaderPos.frag';
 import testFrag from '../../shaders/test.frag';
 import genericVert from '../../shaders/generic.vert';
-import { WebGLLights } from 'three';
+import gsFrag from '../../shaders/gs.frag';
+import screenFrag from '../../shaders/screen.frag';
 
 export default class WebGLView {
   constructor(app) {
@@ -16,6 +17,8 @@ export default class WebGLView {
     this.PARAMS = {
       rotSpeed: 0.005
     };
+    this.last = performance.now();
+    this.mMinusOnes = new THREE.Vector2(-1, -1);
 
     this.init();
   }
@@ -41,43 +44,57 @@ export default class WebGLView {
       this.renderer
     );
 
-    this.pos0 = this.gpuCompute.createTexture();
-    this.vel0 = this.gpuCompute.createTexture();
+    this.texture1 = this.gpuCompute.createTexture();
+    this.texture2 = this.gpuCompute.createTexture();
 
-    this.fillPositionTexture(this.pos0);
-    this.fillVelocityTexture(this.vel0);
+    this.fillPositionTexture(this.texture1);
+    this.fillVelocityTexture(this.texture2);
 
     // add texture variables
-    this.velVar = this.gpuCompute.addVariable(
-      'textureVelocity',
-      // glslify(fragmentShaderVel),
-      fragmentShaderVel,
-      this.pos0
+    this.texture1Var = this.gpuCompute.addVariable(
+      'texture1',
+      glslify(gsFrag),
+      this.texture1
     );
-    this.posVar = this.gpuCompute.addVariable(
-      'texturePosition',
-      // glslify(fragmentShaderPos),
-      fragmentShaderPos,
-      this.vel0
+    this.texture2Var = this.gpuCompute.addVariable(
+      'texture2',
+      glslify(gsFrag),
+      this.texture2
     );
 
+    // add uniforms
+    this.texture1Uniforms = this.texture1Var.material.uniforms;
+    this.texture2Uniforms = this.texture2Var.material.uniforms;
+    this.texture1Uniforms.time = { value: 0.0 };
+    this.texture1Uniforms.delta = { value: 0.0 };
+    this.texture1Uniforms.brush = {
+      type: 'v2',
+      value: new THREE.Vector2(-10, -10)
+    };
+    this.texture2Uniforms.time = { value: 0.0 };
+    this.texture2Uniforms.delta = { value: 0.0 };
+    this.texture2Uniforms.brush = {
+      type: 'v2',
+      value: new THREE.Vector2(-10, -10)
+    };
+
     // add variable dependencies
-    this.gpuCompute.setVariableDependencies(this.velVar, [
-      this.velVar,
-      this.posVar
+    this.gpuCompute.setVariableDependencies(this.texture1Var, [
+      this.texture1Var,
+      this.texture2Var
     ]);
-    this.gpuCompute.setVariableDependencies(this.posVar, [
-      this.velVar,
-      this.posVar
+    this.gpuCompute.setVariableDependencies(this.texture2Var, [
+      this.texture1Var,
+      this.texture2Var
     ]);
 
     // add custom uniforms
-    this.velVar.material.uniforms.time = { value: 0.0 };
+    this.texture1Var.material.uniforms.time = { value: 0.0 };
 
-    // this.velVar.wrapS = THREE.RepeatWrapping;
-    // this.velVar.wrapT = THREE.RepeatWrapping;
-    // this.posVar.wrapS = THREE.RepeatWrapping;
-    // this.posVar.wrapT = THREE.RepeatWrapping;
+    // this.texture1Var.wrapS = THREE.RepeatWrapping;
+    // this.texture1Var.wrapT = THREE.RepeatWrapping;
+    // this.texture2Var.wrapS = THREE.RepeatWrapping;
+    // this.texture2Var.wrapT = THREE.RepeatWrapping;
 
     // error check
     const error = this.gpuCompute.init();
@@ -144,6 +161,15 @@ export default class WebGLView {
     window.addEventListener('mousemove', ({ clientX, clientY }) => {
       this.mouse.x = clientX; //(clientX / this.width) * 2 - 1;
       this.mouse.y = clientY; //-(clientY / this.height) * 2 + 1;
+
+      this.texture1Uniforms.brush.value = new THREE.Vector2(
+        this.mouse.x / this.width,
+        1 - this.mouse.y / this.height
+      );
+      this.texture2Uniforms.brush.value = new THREE.Vector2(
+        this.mouse.x / this.width,
+        1 - this.mouse.y / this.height
+      );
     });
   }
 
@@ -151,7 +177,7 @@ export default class WebGLView {
     this.scene = new THREE.Scene();
 
     this.camera = new THREE.PerspectiveCamera();
-    this.camera.position.z = 5;
+    this.camera.position.z = 1.5;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -164,10 +190,10 @@ export default class WebGLView {
       new THREE.PlaneBufferGeometry(1, 1, 32, 32),
       new THREE.ShaderMaterial({
         uniforms: {
-          texturePosition: { value: null },
-          textureVelocity: { value: null }
+          texture2: { value: null },
+          texture1: { value: null }
         },
-        fragmentShader: glslify(testFrag),
+        fragmentShader: glslify(screenFrag),
         vertexShader: glslify(genericVert)
       })
       // new THREE.MeshNormalMaterial()
@@ -192,17 +218,24 @@ export default class WebGLView {
   }
 
   update() {
-    const time = performance.now() * 0.0005;
+    const time = performance.now();
+    let delta = (time - this.last) / 1000;
 
-    this.velVar.material.uniforms.time.value = time;
+    if (delta > 1) delta = 1;
+    this.last = time;
+
+    this.texture1Uniforms.time.value = time;
+    this.texture1Uniforms.delta.value = delta;
+    this.texture2Uniforms.time.value = time;
+    this.texture2Uniforms.delta.value = delta;
 
     this.gpuCompute.compute();
 
-    this.plane.material.uniforms.texturePosition.value = this.gpuCompute.getCurrentRenderTarget(
-      this.posVar
+    this.plane.material.uniforms.texture2.value = this.gpuCompute.getCurrentRenderTarget(
+      this.texture2Var
     ).texture;
-    this.plane.material.uniforms.textureVelocity.value = this.gpuCompute.getCurrentRenderTarget(
-      this.velVar
+    this.plane.material.uniforms.texture1.value = this.gpuCompute.getCurrentRenderTarget(
+      this.texture1Var
     ).texture;
   }
 
