@@ -26,10 +26,10 @@ export default class App {
 	}
 
 	animate() {
-		this.update();
-		this.draw();
+		// this.update();
+		// this.draw();
 
-		this.raf = requestAnimationFrame(this.handlerAnimate);
+		// this.raf = requestAnimationFrame(this.handlerAnimate);
 	}
 
 	// ---------------------------------------------------------------------------------------------

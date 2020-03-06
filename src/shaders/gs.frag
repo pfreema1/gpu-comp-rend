@@ -7,11 +7,11 @@
 // uniform float screenWidth;
 // uniform float screenHeight;
 uniform float delta;
-// uniform float feed;
-// uniform float kill;
-// uniform vec2 brush;
-// uniform float diffRateA;
-// uniform float diffRateB;
+uniform float feed;
+uniform float kill;
+uniform vec2 brush;
+uniform float diffRateA;
+uniform float diffRateB;
 uniform float time;
 // uniform float brushSize;
 
@@ -33,20 +33,14 @@ float map(float value, float min1, float max1, float min2, float max2) {
 void main()
 {
     vec2 vUv = gl_FragCoord.xy / resolution.xy;
-    float feed = 0.037;
-    float kill = 0.06;
-    float diffRateA = 0.2097;
-    float diffRateB = 0.105;
-    vec2 brush = vec2(0.5, 0.5);
 
-    if(brush.x < -5.0)
-    {
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-        return;
-    }
+    // if(brush.x < -5.0)
+    // {
+    //     gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    //     return;
+    // }
     
-    //float feed = vUv.y * 0.083;
-    //float kill = vUv.x * 0.073;
+
 
     float brushSize = map(snoise2(vec2(time * 0.00005)), -1.0, 1.0, 5.0, 2000.0);
     

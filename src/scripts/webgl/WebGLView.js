@@ -15,10 +15,14 @@ export default class WebGLView {
   constructor(app) {
     this.app = app;
     this.PARAMS = {
-      rotSpeed: 0.005
+      feed: 0.037,
+      kill: 0.06,
+      diffRateA: 0.2097,
+      diffRateB: 0.105,
+      delta: 0.5
+      // invert: true,
     };
     this.last = performance.now();
-    this.mMinusOnes = new THREE.Vector2(-1, -1);
 
     this.init();
   }
@@ -47,7 +51,7 @@ export default class WebGLView {
     this.texture1 = this.gpuCompute.createTexture();
     this.texture2 = this.gpuCompute.createTexture();
 
-    this.fillPositionTexture(this.texture1);
+    this.fillInitialTexture(this.texture1);
     this.fillVelocityTexture(this.texture2);
 
     // add texture variables
@@ -71,6 +75,12 @@ export default class WebGLView {
       type: 'v2',
       value: new THREE.Vector2(-10, -10)
     };
+    this.texture1Uniforms.feed = { value: 0.037 };
+    this.texture1Uniforms.kill = { value: 0.06 };
+    this.texture1Uniforms.diffRateA = { value: 0.2097 };
+    this.texture1Uniforms.diffRateB = { value: 0.105 };
+    this.texture1Uniforms.delta = { value: 0.5 };
+
     this.texture2Uniforms.time = { value: 0.0 };
     this.texture2Uniforms.delta = { value: 0.0 };
     this.texture2Uniforms.brush = {
@@ -101,15 +111,24 @@ export default class WebGLView {
     if (error !== null) {
       console.error(error);
     }
+
+    this.gpuCompute.compute();
+
+    this.texture1Uniforms.brush = {
+      type: 'v2',
+      value: new THREE.Vector2(0.5, 0.5)
+    };
+
+    this.render();
   }
 
-  fillPositionTexture(texture) {
+  fillInitialTexture(texture) {
     var theArray = texture.image.data;
 
     for (var k = 0, kl = theArray.length; k < kl; k += 4) {
-      var x = Math.random() * this.BOUNDS - this.BOUNDS_HALF;
-      var y = Math.random() * this.BOUNDS - this.BOUNDS_HALF;
-      var z = Math.random() * this.BOUNDS - this.BOUNDS_HALF;
+      var x = 1.0;
+      var y = 0.0;
+      var z = 0.0;
 
       theArray[k + 0] = x;
       theArray[k + 1] = y;
@@ -146,11 +165,49 @@ export default class WebGLView {
     this.pane = new Tweakpane();
 
     this.pane
-      .addInput(this.PARAMS, 'rotSpeed', {
+      .addInput(this.PARAMS, 'feed', {
         min: 0.0,
-        max: 0.5
+        max: 0.2
       })
-      .on('change', value => {});
+      .on('change', value => {
+        this.texture1Uniforms.feed.value = value;
+      });
+
+    this.pane
+      .addInput(this.PARAMS, 'kill', {
+        min: 0.0,
+        max: 0.2
+      })
+      .on('change', value => {
+        this.texture1Uniforms.kill.value = value;
+      });
+
+    this.pane
+      .addInput(this.PARAMS, 'diffRateA', {
+        min: 0.0,
+        max: 1.5
+      })
+      .on('change', value => {
+        this.texture1Uniforms.diffRateA.value = value;
+      });
+
+    this.pane
+      .addInput(this.PARAMS, 'diffRateB', {
+        min: 0.0,
+        max: 1.5
+      })
+      .on('change', value => {
+        this.texture1Uniforms.diffRateB.value = value;
+      });
+
+    this.pane
+      .addInput(this.PARAMS, 'delta', {
+        min: 0.0,
+        max: 1.5
+      })
+      .on('change', value => {
+        this.texture1Uniforms.delta.value = value;
+      });
   }
 
   initMouseMoveListen() {
@@ -217,7 +274,7 @@ export default class WebGLView {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  update() {
+  render() {
     const time = performance.now();
     let delta = (time - this.last) / 1000;
 
@@ -225,21 +282,26 @@ export default class WebGLView {
     this.last = time;
 
     this.texture1Uniforms.time.value = time;
-    this.texture1Uniforms.delta.value = delta;
+    // this.texture1Uniforms.delta.value = delta;
     this.texture2Uniforms.time.value = time;
     this.texture2Uniforms.delta.value = delta;
 
-    this.gpuCompute.compute();
+    for (let i = 0; i < 16; i++) {
+      this.gpuCompute.compute();
 
-    this.plane.material.uniforms.texture2.value = this.gpuCompute.getCurrentRenderTarget(
-      this.texture2Var
-    ).texture;
-    this.plane.material.uniforms.texture1.value = this.gpuCompute.getCurrentRenderTarget(
-      this.texture1Var
-    ).texture;
-  }
+      // this.plane.material.uniforms.texture2.value = this.gpuCompute.getCurrentRenderTarget(
+      //   this.texture2Var
+      // ).texture;
+      this.plane.material.uniforms.texture1.value = this.gpuCompute.getCurrentRenderTarget(
+        this.texture1Var
+      ).texture;
 
-  draw() {
+    }
+
+
     this.renderer.render(this.scene, this.camera);
+
+    requestAnimationFrame(this.render.bind(this));
   }
+
 }
