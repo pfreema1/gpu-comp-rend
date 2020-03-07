@@ -214,13 +214,16 @@ export default class WebGLView {
       new THREE.PlaneBufferGeometry(1, 1, 32, 32),
       new THREE.ShaderMaterial({
         uniforms: {
-          texture1: { value: null }
+          texture1: { value: null },
+          time: { value: null }
         },
         fragmentShader: glslify(screenFrag),
         vertexShader: glslify(genericVert)
       })
       // new THREE.MeshNormalMaterial()
     );
+
+    this.planeUniforms = this.plane.material.uniforms;
 
     this.scene.add(this.plane);
     console.log(this.scene);
@@ -245,6 +248,7 @@ export default class WebGLView {
     // this.last = time;
 
     this.texture1Uniforms.time.value = time;
+    this.planeUniforms.time.value = time;
 
     for (let i = 0; i < 12; i++) {
       this.gpuCompute.compute();
