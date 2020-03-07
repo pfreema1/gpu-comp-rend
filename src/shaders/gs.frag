@@ -28,7 +28,7 @@ void main()
     //     return;
     // }
 
-    float brushSize = 25000.0 * abs(mouseDelta.x);//map(snoise2(vec2(time * 0.0005)), -1.0, 1.0, 2.0, 500.0);
+    float brushSize = 35000.0 * abs(mouseDelta.x);//map(snoise2(vec2(time * 0.0005)), -1.0, 1.0, 2.0, 500.0);
     
     vec2 uv = texture2D(texture1, vUv).rg;
     vec2 uv0 = texture2D(texture1, vUv+vec2(-step_x, 0.0)).rg;
