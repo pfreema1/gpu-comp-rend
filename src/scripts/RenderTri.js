@@ -63,6 +63,6 @@ export default class RenderTri {
 
   update(time, mousePos) {
     this.triMaterial.uniforms.uTime.value = time;
-    this.triMaterial.uniforms.mousePos.value = mousePos;
+    // this.triMaterial.uniforms.mousePos.value = mousePos;
   }
 }

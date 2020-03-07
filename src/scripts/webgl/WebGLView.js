@@ -81,6 +81,7 @@ export default class WebGLView {
     this.texture1Uniforms.diffRateA = { value: 0.2097 };
     this.texture1Uniforms.diffRateB = { value: 0.105 };
     this.texture1Uniforms.delta = { value: 0.5 };
+    this.texture1Uniforms.mouseDelta = { value: new THREE.Vector2(0.0, 0.0) };
 
     // add variable dependencies
     this.gpuCompute.setVariableDependencies(this.texture1Var, [
@@ -190,18 +191,24 @@ export default class WebGLView {
     this.height = window.innerHeight;
 
     window.addEventListener('mousemove', ({ clientX, clientY }) => {
-      this.mouse.x = clientX; //(clientX / this.width) * 2 - 1;
-      this.mouse.y = clientY; //-(clientY / this.height) * 2 + 1;
+      this.mouse.x = clientX;
+      this.mouse.y = clientY;
+
+      if (!this.lastMouse) {
+        this.lastMouse = new THREE.Vector2(this.mouse.x, this.mouse.y);
+      }
 
       this.texture1Uniforms.brush.value = new THREE.Vector2(
         this.mouse.x / this.width,
         1 - this.mouse.y / this.height
       );
+      this.texture1Uniforms.mouseDelta.value = new THREE.Vector2(
+        (this.lastMouse.x - this.mouse.x) / this.width,
+        (this.lastMouse.y - this.mouse.y) / this.height
+      );
 
-      TweenMax.to(this.mousePos, 1.0, {
-        x: this.mouse.x / this.width,
-        y: 1.0 - this.mouse.y / this.height
-      });
+      this.lastMouse.x = this.mouse.x;
+      this.lastMouse.y = this.mouse.y;
     });
   }
 

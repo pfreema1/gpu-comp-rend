@@ -2,7 +2,7 @@ precision highp float;
 uniform sampler2D uScene;
 uniform vec2 uResolution;
 uniform float uTime;
-uniform vec2 mousePos;
+// uniform vec2 mousePos;
 
 float map(float value, float min1, float max1, float min2, float max2) {
   return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -11,9 +11,6 @@ float map(float value, float min1, float max1, float min2, float max2) {
 void main() {
     vec2 uv = gl_FragCoord.xy / uResolution.xy;
     vec4 color = vec4(0.0);
-    float distToMouse = (1.0 - length(mousePos - uv)) * 0.5;
-
-    // distToMouse = map(distToMouse, 0.15, 0.0, 0.0, 1.0);
 
     float distToEdge = 1.0 - smoothstep(0.0, 0.1, uv.x);
     distToEdge += smoothstep(0.9, 1.0, uv.x);
