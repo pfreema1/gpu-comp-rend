@@ -22,7 +22,7 @@ export default class WebGLView {
       delta: 0.5
       // invert: true,
     };
-    this.last = performance.now();
+    // this.last = performance.now();
 
     this.init();
   }
@@ -39,12 +39,10 @@ export default class WebGLView {
   initGPUCompRend() {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    this.BOUNDS = 800;
-    this.BOUNDS_HALF = this.BOUNDS / 2;
 
     this.gpuCompute = new GPUComputationRenderer(
-      this.width,
-      this.height,
+      1024 / 2,
+      512 / 2,
       this.renderer
     );
 
@@ -73,16 +71,18 @@ export default class WebGLView {
     this.texture1Uniforms.diffRateB = { value: 0.105 };
     this.texture1Uniforms.delta = { value: 0.5 };
 
-
-
     // add variable dependencies
     this.gpuCompute.setVariableDependencies(this.texture1Var, [
       this.texture1Var
     ]);
 
+    // this.texture1Var.wrapS = THREE.ClampToEdgeWrapping;
+    // this.texture1Var.wrapT = THREE.ClampToEdgeWrapping;
 
-    this.texture1Var.wrapS = THREE.ClampToEdgeWrapping;
-    this.texture1Var.wrapT = THREE.ClampToEdgeWrapping;
+    this.texture1Var.wrapS = THREE.RepeatWrapping;
+    this.texture1Var.wrapT = THREE.RepeatWrapping;
+    this.texture1Var.minFilter = THREE.LinearFilter;
+    this.texture1Var.magFilter = THREE.LinearFilter;
 
     // error check
     const error = this.gpuCompute.init();
@@ -115,21 +115,6 @@ export default class WebGLView {
     }
   }
 
-  fillVelocityTexture(texture) {
-    var theArray = texture.image.data;
-
-    for (var k = 0, kl = theArray.length; k < kl; k += 4) {
-      var x = Math.random() - 0.5;
-      var y = Math.random() - 0.5;
-      var z = Math.random() - 0.5;
-
-      theArray[k + 0] = x * 10;
-      theArray[k + 1] = y * 10;
-      theArray[k + 2] = z * 10;
-      theArray[k + 3] = 1;
-    }
-  }
-
   initResizeHandler() {
     window.addEventListener(
       'resize',
@@ -145,7 +130,7 @@ export default class WebGLView {
     this.pane
       .addInput(this.PARAMS, 'feed', {
         min: 0.0,
-        max: 0.2
+        max: 0.08
       })
       .on('change', value => {
         this.texture1Uniforms.feed.value = value;
@@ -154,7 +139,7 @@ export default class WebGLView {
     this.pane
       .addInput(this.PARAMS, 'kill', {
         min: 0.0,
-        max: 0.2
+        max: 0.07
       })
       .on('change', value => {
         this.texture1Uniforms.kill.value = value;
@@ -163,7 +148,7 @@ export default class WebGLView {
     this.pane
       .addInput(this.PARAMS, 'diffRateA', {
         min: 0.0,
-        max: 1.5
+        max: 0.5
       })
       .on('change', value => {
         this.texture1Uniforms.diffRateA.value = value;
@@ -172,7 +157,7 @@ export default class WebGLView {
     this.pane
       .addInput(this.PARAMS, 'diffRateB', {
         min: 0.0,
-        max: 1.5
+        max: 0.5
       })
       .on('change', value => {
         this.texture1Uniforms.diffRateB.value = value;
@@ -208,7 +193,14 @@ export default class WebGLView {
     this.scene = new THREE.Scene();
 
     // this.camera = new THREE.PerspectiveCamera();
-    this.camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -10000, 10000);
+    this.camera = new THREE.OrthographicCamera(
+      -0.5,
+      0.5,
+      0.5,
+      -0.5,
+      -10000,
+      10000
+    );
     // this.camera.position.z = 3.5;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -250,24 +242,20 @@ export default class WebGLView {
 
   render() {
     const time = performance.now();
-    this.last = time;
+    // this.last = time;
 
     this.texture1Uniforms.time.value = time;
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 12; i++) {
       this.gpuCompute.compute();
-
 
       this.plane.material.uniforms.texture1.value = this.gpuCompute.getCurrentRenderTarget(
         this.texture1Var
       ).texture;
-
     }
-
 
     this.renderer.render(this.scene, this.camera);
 
     requestAnimationFrame(this.render.bind(this));
   }
-
 }

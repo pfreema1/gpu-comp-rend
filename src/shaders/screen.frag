@@ -2,12 +2,8 @@
 // precision lowp int;
 
 varying vec2 vUv;
-uniform float screenWidth;
-uniform float screenHeight;
 uniform sampler2D texture1;
-uniform float invert;
-
-vec2 texel = vec2(1.0/screenWidth, 1.0/screenHeight);
+// uniform float invert;
 
 void main()
 {
@@ -23,5 +19,4 @@ void main()
     col = vec3(value);
 
     gl_FragColor = vec4(col.r, col.g, col.b, 1.0);
-    // gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
