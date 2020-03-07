@@ -49,10 +49,8 @@ export default class WebGLView {
     );
 
     this.texture1 = this.gpuCompute.createTexture();
-    this.texture2 = this.gpuCompute.createTexture();
 
     this.fillInitialTexture(this.texture1);
-    this.fillVelocityTexture(this.texture2);
 
     // add texture variables
     this.texture1Var = this.gpuCompute.addVariable(
@@ -60,15 +58,9 @@ export default class WebGLView {
       glslify(gsFrag),
       this.texture1
     );
-    this.texture2Var = this.gpuCompute.addVariable(
-      'texture2',
-      glslify(gsFrag),
-      this.texture2
-    );
 
     // add uniforms
     this.texture1Uniforms = this.texture1Var.material.uniforms;
-    this.texture2Uniforms = this.texture2Var.material.uniforms;
     this.texture1Uniforms.time = { value: 0.0 };
     this.texture1Uniforms.delta = { value: 0.0 };
     this.texture1Uniforms.brush = {
@@ -81,30 +73,16 @@ export default class WebGLView {
     this.texture1Uniforms.diffRateB = { value: 0.105 };
     this.texture1Uniforms.delta = { value: 0.5 };
 
-    this.texture2Uniforms.time = { value: 0.0 };
-    this.texture2Uniforms.delta = { value: 0.0 };
-    this.texture2Uniforms.brush = {
-      type: 'v2',
-      value: new THREE.Vector2(-10, -10)
-    };
+
 
     // add variable dependencies
     this.gpuCompute.setVariableDependencies(this.texture1Var, [
-      this.texture1Var,
-      this.texture2Var
-    ]);
-    this.gpuCompute.setVariableDependencies(this.texture2Var, [
-      this.texture1Var,
-      this.texture2Var
+      this.texture1Var
     ]);
 
-    // add custom uniforms
-    this.texture1Var.material.uniforms.time = { value: 0.0 };
 
-    // this.texture1Var.wrapS = THREE.RepeatWrapping;
-    // this.texture1Var.wrapT = THREE.RepeatWrapping;
-    // this.texture2Var.wrapS = THREE.RepeatWrapping;
-    // this.texture2Var.wrapT = THREE.RepeatWrapping;
+    this.texture1Var.wrapS = THREE.ClampToEdgeWrapping;
+    this.texture1Var.wrapT = THREE.ClampToEdgeWrapping;
 
     // error check
     const error = this.gpuCompute.init();
@@ -223,18 +201,15 @@ export default class WebGLView {
         this.mouse.x / this.width,
         1 - this.mouse.y / this.height
       );
-      this.texture2Uniforms.brush.value = new THREE.Vector2(
-        this.mouse.x / this.width,
-        1 - this.mouse.y / this.height
-      );
     });
   }
 
   initThree() {
     this.scene = new THREE.Scene();
 
-    this.camera = new THREE.PerspectiveCamera();
-    this.camera.position.z = 1.5;
+    // this.camera = new THREE.PerspectiveCamera();
+    this.camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -10000, 10000);
+    // this.camera.position.z = 3.5;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -247,7 +222,6 @@ export default class WebGLView {
       new THREE.PlaneBufferGeometry(1, 1, 32, 32),
       new THREE.ShaderMaterial({
         uniforms: {
-          texture2: { value: null },
           texture1: { value: null }
         },
         fragmentShader: glslify(screenFrag),
@@ -276,22 +250,14 @@ export default class WebGLView {
 
   render() {
     const time = performance.now();
-    let delta = (time - this.last) / 1000;
-
-    if (delta > 1) delta = 1;
     this.last = time;
 
     this.texture1Uniforms.time.value = time;
-    // this.texture1Uniforms.delta.value = delta;
-    this.texture2Uniforms.time.value = time;
-    this.texture2Uniforms.delta.value = delta;
 
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 2; i++) {
       this.gpuCompute.compute();
 
-      // this.plane.material.uniforms.texture2.value = this.gpuCompute.getCurrentRenderTarget(
-      //   this.texture2Var
-      // ).texture;
+
       this.plane.material.uniforms.texture1.value = this.gpuCompute.getCurrentRenderTarget(
         this.texture1Var
       ).texture;
