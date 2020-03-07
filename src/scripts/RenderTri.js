@@ -6,16 +6,13 @@ import fullScreenTriFrag from './../shaders/fullScreenTri.frag';
 import fullScreenTriVert from './../shaders/fullScreenTri.vert';
 
 export default class RenderTri {
-  constructor(scene, renderer, bgRenderTarget, mouseCanvas, textCanvas) {
+  constructor(scene, renderer, bgRenderTarget) {
     this.scene = scene;
     this.renderer = renderer;
     this.bgRenderTarget = bgRenderTarget;
-    this.mouseCanvas = mouseCanvas;
-    this.textCanvas = textCanvas;
 
     const resolution = new THREE.Vector2();
     this.renderer.getDrawingBufferSize(resolution);
-
     this.RenderTriTarget = new THREE.WebGLRenderTarget(
       resolution.x,
       resolution.y,
@@ -34,17 +31,12 @@ export default class RenderTri {
           type: 't',
           value: this.bgRenderTarget.texture
         },
-        uMouseCanvas: {
-          type: 't',
-          value: this.mouseCanvas.texture
-        },
-        uTextCanvas: {
-          type: 't',
-          value: this.textCanvas.texture
-        },
         uResolution: { value: resolution },
         uTime: {
           value: 0.0
+        },
+        mousePos: {
+          value: new THREE.Vector2(0.5, 0.5)
         }
       }
     });
@@ -67,5 +59,10 @@ export default class RenderTri {
     geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 2));
 
     return geometry;
+  }
+
+  update(time, mousePos) {
+    this.triMaterial.uniforms.uTime.value = time;
+    this.triMaterial.uniforms.mousePos.value = mousePos;
   }
 }

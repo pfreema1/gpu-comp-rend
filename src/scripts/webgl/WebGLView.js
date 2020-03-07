@@ -4,12 +4,11 @@ import glslify from 'glslify';
 import Tweakpane from 'tweakpane';
 import { debounce } from '../utils/debounce';
 import GPUComputationRenderer from './GPUComputationRenderer';
-import fragmentShaderVel from '../../shaders/fragmentShaderVel.frag';
-import fragmentShaderPos from '../../shaders/fragmentShaderPos.frag';
-import testFrag from '../../shaders/test.frag';
 import genericVert from '../../shaders/generic.vert';
 import gsFrag from '../../shaders/gs.frag';
 import screenFrag from '../../shaders/screen.frag';
+import RenderTri from '../RenderTri';
+import TweenMax from 'TweenMax';
 
 export default class WebGLView {
   constructor(app) {
@@ -22,18 +21,30 @@ export default class WebGLView {
       delta: 0.5
       // invert: true,
     };
-    // this.last = performance.now();
+    this.mousePos = new THREE.Vector2();
 
     this.init();
   }
 
   async init() {
+    this.initBgScene();
     this.initThree();
     this.initPlane();
+    this.initRenderTri();
     this.initGPUCompRend();
     this.initTweakPane();
     this.initMouseMoveListen();
     this.initResizeHandler();
+  }
+
+  initRenderTri() {
+    this.resize();
+
+    this.renderTri = new RenderTri(
+      this.scene,
+      this.renderer,
+      this.bgRenderTarget
+    );
   }
 
   initGPUCompRend() {
@@ -186,14 +197,27 @@ export default class WebGLView {
         this.mouse.x / this.width,
         1 - this.mouse.y / this.height
       );
+
+      TweenMax.to(this.mousePos, 1.0, {
+        x: this.mouse.x / this.width,
+        y: 1.0 - this.mouse.y / this.height
+      });
     });
   }
 
   initThree() {
     this.scene = new THREE.Scene();
+    this.camera = new THREE.OrthographicCamera();
 
-    // this.camera = new THREE.PerspectiveCamera();
-    this.camera = new THREE.OrthographicCamera(
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    // this.renderer.autoClear = true;
+  }
+
+  initBgScene() {
+    this.bgScene = new THREE.Scene();
+    this.bgCamera = new THREE.OrthographicCamera(
       -0.5,
       0.5,
       0.5,
@@ -201,12 +225,10 @@ export default class WebGLView {
       -10000,
       10000
     );
-    // this.camera.position.z = 3.5;
-
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    // this.renderer.autoClear = true;
+    this.bgRenderTarget = new THREE.WebGLRenderTarget(
+      window.innerWidth,
+      window.innerHeight
+    );
   }
 
   initPlane() {
@@ -225,8 +247,7 @@ export default class WebGLView {
 
     this.planeUniforms = this.plane.material.uniforms;
 
-    this.scene.add(this.plane);
-    console.log(this.scene);
+    this.bgScene.add(this.plane);
   }
 
   resize() {
@@ -244,11 +265,15 @@ export default class WebGLView {
   }
 
   render() {
+    if (!this.renderTri) return;
+
     const time = performance.now();
     // this.last = time;
 
     this.texture1Uniforms.time.value = time;
     this.planeUniforms.time.value = time;
+
+    this.renderTri.update(time, this.mousePos);
 
     for (let i = 0; i < 12; i++) {
       this.gpuCompute.compute();
@@ -257,6 +282,10 @@ export default class WebGLView {
         this.texture1Var
       ).texture;
     }
+
+    this.renderer.setRenderTarget(this.bgRenderTarget);
+    this.renderer.render(this.bgScene, this.bgCamera);
+    this.renderer.setRenderTarget(null);
 
     this.renderer.render(this.scene, this.camera);
 
