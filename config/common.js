@@ -17,7 +17,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'TweenMax': path.resolve(__root, './src/scripts/vendors/gsap/TweenMax.js')
+      TweenMax: path.resolve(__root, './src/scripts/vendors/gsap/TweenMax.js')
     }
   },
   module: {

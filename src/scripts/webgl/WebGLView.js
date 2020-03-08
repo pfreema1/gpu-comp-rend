@@ -8,7 +8,8 @@ import genericVert from '../../shaders/generic.vert';
 import gsFrag from '../../shaders/gs.frag';
 import screenFrag from '../../shaders/screen.frag';
 import RenderTri from '../RenderTri';
-import TweenMax from 'TweenMax';
+import presets from '../utils/presets';
+import { gsap } from 'gsap';
 
 export default class WebGLView {
   constructor(app) {
@@ -21,6 +22,7 @@ export default class WebGLView {
       delta: 0.5
       // invert: true,
     };
+
     this.mousePos = new THREE.Vector2();
 
     this.init();
@@ -32,9 +34,30 @@ export default class WebGLView {
     this.initPlane();
     this.initRenderTri();
     this.initGPUCompRend();
-    this.initTweakPane();
+    // this.initTweakPane();
     this.initMouseMoveListen();
     this.initResizeHandler();
+    this.initChemicalAnimation();
+  }
+
+  initChemicalAnimation() {
+    this.chemicalTl = gsap.timeline({ paused: true, repeat: -1, yoyo: true });
+    let time = 0;
+    const tweenDur = 4.0;
+
+    for (let i = 0; i < presets.length; i++) {
+      const feedTween = gsap.to(this.texture1Uniforms.feed, tweenDur, {
+        value: presets[i].feed
+      });
+      const killTween = gsap.to(this.texture1Uniforms.kill, tweenDur, {
+        value: presets[i].kill
+      });
+
+      this.chemicalTl.add(feedTween, i * tweenDur);
+      this.chemicalTl.add(killTween, i * tweenDur);
+    }
+
+    this.chemicalTl.play();
   }
 
   initRenderTri() {
